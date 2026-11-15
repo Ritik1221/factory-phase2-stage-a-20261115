@@ -1,0 +1,46 @@
+name: ci
+on:
+  pull_request:
+  push:
+    branches: [main]
+  # A merge performed with GITHUB_TOKEN does not emit a normal push workflow.
+  # The trusted control plane can request an exact-main verification explicitly.
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ci: # the dispatcher reads the check run by this name
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node --test .github/factory/*.test.mjs .github/factory/providers/*.test.mjs
+      - run: node .github/factory/scan.mjs
+      - run: bash .claude/hooks/guard.test.sh
+      - if: hashFiles('package.json') != ''
+        run: |
+          if [ -f package-lock.json ]; then npm ci && npm audit --audit-level=high; else npm install --no-audit --no-fund; fi
+          npm run lint --if-present
+          npm run typecheck --if-present
+          npm test --if-present
+          npm run build --if-present
+  e2e: # the dispatcher reads the check run by this name
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - if: hashFiles('factory/phase2.json') != '' && hashFiles('package-lock.json') != ''
+        run: npm ci
+      - if: hashFiles('factory/phase2.json') != '' && hashFiles('package-lock.json') == ''
+        run: npm install --no-audit --no-fund
+      - name: require meaningful e2e command
+        if: hashFiles('factory/phase2.json') != ''
+        run: node .github/factory/smoke.mjs
+      - if: hashFiles('factory/phase2.json') != ''
+        run: npm run e2e

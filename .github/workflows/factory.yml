@@ -1,0 +1,78 @@
+name: factory
+# Every trigger runs this file from main, so fire tokens never reach branch code.
+on:
+  push:
+    branches: [main]
+    paths: [GOALS.md]
+  issue_comment:
+    types: [created]
+  issues:
+    types: [opened, labeled, edited]
+  workflow_run:
+    workflows: [ci]
+    types: [completed]
+  pull_request_target:
+    types: [closed]
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+    inputs:
+      fault_point:
+        description: Disposable Stage A crash point; leave as none for normal operation
+        required: false
+        default: none
+        type: choice
+        options:
+          - none
+          - after-journal-append
+          - after-task-operation-intent
+          - after-task-issue-create
+concurrency:
+  group: factory
+  cancel-in-progress: false
+# contents: write exists only so this job can merge a validated pull request.
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  checks: read
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node .github/factory/run.mjs
+        env:
+          # The ephemeral token is scoped to this repository and this job.
+          # Follow-up workflows are dispatched explicitly when needed; never
+          # store a broad personal token in a disposable or product repository.
+          GITHUB_TOKEN: ${{ github.token }}
+          FACTORY_ROUTINE_ID: ${{ vars.FACTORY_ROUTINE_ID }}
+          FACTORY_FIRE_TOKEN: ${{ secrets.FACTORY_FIRE_TOKEN }}
+          FACTORY_ROUTINE_ID_PLANNER: ${{ vars.FACTORY_ROUTINE_ID_PLANNER }}
+          FACTORY_FIRE_TOKEN_PLANNER: ${{ secrets.FACTORY_FIRE_TOKEN_PLANNER }}
+          FACTORY_ROUTINE_ID_WORKER: ${{ vars.FACTORY_ROUTINE_ID_WORKER }}
+          FACTORY_FIRE_TOKEN_WORKER: ${{ secrets.FACTORY_FIRE_TOKEN_WORKER }}
+          FACTORY_ROUTINE_ID_ESCALATION: ${{ vars.FACTORY_ROUTINE_ID_ESCALATION }}
+          FACTORY_FIRE_TOKEN_ESCALATION: ${{ secrets.FACTORY_FIRE_TOKEN_ESCALATION }}
+          FACTORY_ROUTINE_ID_REVIEWER: ${{ vars.FACTORY_ROUTINE_ID_REVIEWER }}
+          FACTORY_FIRE_TOKEN_REVIEWER: ${{ secrets.FACTORY_FIRE_TOKEN_REVIEWER }}
+          FACTORY_REVIEWER_LOGIN: ${{ vars.FACTORY_REVIEWER_LOGIN }}
+          FACTORY_WORKER_LOGIN: ${{ vars.FACTORY_WORKER_LOGIN }}
+          FACTORY_OWNER_LOGIN: ${{ vars.FACTORY_OWNER_LOGIN }}
+          FACTORY_ACTIVE_PROVIDER: ${{ vars.FACTORY_ACTIVE_PROVIDER }}
+          FACTORY_CODEX_RUNNER_URL: ${{ vars.FACTORY_CODEX_RUNNER_URL }}
+          FACTORY_CODEX_RUNNER_TOKEN: ${{ secrets.FACTORY_CODEX_RUNNER_TOKEN }}
+          FACTORY_PROVIDER_RESUME_NONCE: ${{ vars.FACTORY_PROVIDER_RESUME_NONCE }}
+          FACTORY_AGENT_EXECUTION: ${{ vars.FACTORY_AGENT_EXECUTION }}
+          FACTORY_DISPATCHER_LOGIN: ${{ vars.FACTORY_DISPATCHER_LOGIN || 'github-actions[bot]' }}
+          FACTORY_INTEGRATION_TEST: ${{ vars.FACTORY_INTEGRATION_TEST }}
+          FACTORY_INTEGRATION_REPOSITORY: ${{ vars.FACTORY_INTEGRATION_REPOSITORY }}
+          FACTORY_FAULT_POINT: ${{ inputs.fault_point }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
