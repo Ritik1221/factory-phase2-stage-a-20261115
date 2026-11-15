@@ -31,6 +31,8 @@ export const goalIdsForSnapshot = (body) => {
   return ids.length ? ids : ['G1'];
 };
 export const goalSnapshotHash = (body, title = '') => createHash('sha256').update(`${title}\n${body ?? ''}`).digest('hex');
+export const verifiedGoalSnapshot = (snapshot) => snapshot &&
+  snapshot.hash === goalSnapshotHash(snapshot.body, snapshot.title) ? snapshot : null;
 export const planVersionHash = (plan) => createHash('sha256').update(JSON.stringify(plan)).digest('hex');
 export function parseGoalCommand(issue) {
   const line = [issue?.title, String(issue?.body ?? '').split(/\r?\n/)[0]].find((value) => /^\/goal(?:\s|$)/i.test(String(value ?? '').trim()));

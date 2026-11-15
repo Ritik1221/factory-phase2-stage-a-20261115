@@ -4,6 +4,7 @@ import {
   touchesProtected, ciState, branchOf, pickReview, pickFinalReview, makeGoalSnapshot,
   goalSnapshotHash, parseGoalSnapshot, renderGoalSnapshot, weakened, STATES, BRANCH,
   effectiveTasks, completionGate, providerFromLabels, validatePlan, goalIdsForSnapshot, parseGoalCommand,
+  verifiedGoalSnapshot,
 } from './lib.mjs';
 import {
   emptyFactoryState, parseFactoryState, withFactoryState, stateDiff, prepareEvent,
@@ -207,8 +208,8 @@ async function loadState() {
     ? parseGoalSnapshot(goalComments, DISPATCHER)
     : null;
   const storedGoal = status.canonical.goal ?? status.goalSnapshot ?? null;
-  const goalSnapshot = storedGoal?.hash === goalSnapshotHash(storedGoal.body, storedGoal.title)
-    ? storedGoal : candidateSnapshot?.invalid ? null : candidateSnapshot;
+  const goalSnapshot = verifiedGoalSnapshot(storedGoal) ??
+    (candidateSnapshot?.invalid ? null : verifiedGoalSnapshot(candidateSnapshot));
   let plan;
   try { plan = JSON.parse((await file('factory/plan.json', 'factory/plan')) ?? 'null'); }
   catch { plan = { goals_sha: goalSnapshot?.hash ?? goalsSha, tasks: null }; }

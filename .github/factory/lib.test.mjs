@@ -341,7 +341,7 @@ test('a superseded duplicate never closes the pull request of the live issue', (
 });
 
 test('Phase 2 plan requires durable architecture, invariants, mappings and a real smoke contract', async () => {
-  const { goalSnapshotHash, makeGoalSnapshot, goalIdsForSnapshot, completionGate, pickFinalReview } = await import('./lib.mjs');
+  const { goalSnapshotHash, makeGoalSnapshot, goalIdsForSnapshot, completionGate, pickFinalReview, verifiedGoalSnapshot } = await import('./lib.mjs');
   const snapshot = makeGoalSnapshot({ number: 44, title: 'Real product', body: '## G1: Product\nBuild the product.' });
   const task = { ...T1 };
   const good = {
@@ -355,6 +355,9 @@ test('Phase 2 plan requires durable architecture, invariants, mappings and a rea
     tasks: [task],
   };
   assert.equal(goalSnapshotHash(snapshot.body, snapshot.title), snapshot.hash);
+  assert.equal(verifiedGoalSnapshot(null), null);
+  assert.equal(verifiedGoalSnapshot(snapshot), snapshot);
+  assert.equal(verifiedGoalSnapshot({ ...snapshot, body: 'tampered' }), null);
   assert.deepEqual(validatePlan(good, goalIdsForSnapshot(snapshot.body), { goalSnapshot: snapshot }), []);
   assert.ok(validatePlan({ ...good, completion: { required_checks: ['ci', 'e2e'], smoke_test: { name: 'placeholder', command: 'echo pass', assertions: ['true;'] } } }, ['G1'], { goalSnapshot: snapshot }).length);
   assert.equal(completionGate({ goalSnapshot: snapshot, plan: good, mainChecks: { ci: 'green', e2e: 'green' }, mainSha: 'm1', finalReview: { sha: 'm1', goal_snapshot_sha: snapshot.hash, verdict: 'approve', findings: [], reconciliation: [{ id: 'G1', status: 'satisfied', evidence: 'e2e' }] } }).ok, true);
