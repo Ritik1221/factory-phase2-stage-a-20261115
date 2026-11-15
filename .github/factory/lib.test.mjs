@@ -61,6 +61,16 @@ test('helpers', () => {
   assert.equal(ciState([run(), run({ status: 'in_progress', started_at: '2026-01-02T00:00:00Z' })]), 'pending');
 });
 
+test('GitHub Actions checks are evaluated by the requested job name', () => {
+  const checks = [
+    { name: 'ci', status: 'completed', conclusion: 'success', started_at: '2026-01-01T00:00:00Z', app: { slug: 'github-actions' } },
+    { name: 'e2e', status: 'completed', conclusion: 'success', started_at: '2026-01-01T00:00:01Z', app: { slug: 'github-actions' } },
+  ];
+  assert.equal(ciState(checks), 'green');
+  assert.equal(ciState(checks, 'e2e'), 'green');
+  assert.equal(ciState(checks, 'missing'), 'pending');
+});
+
 test('no goal headings: nothing fired, note explains', () => {
   const a = decide(state({ goalIds: [], plan: null }));
   assert.equal(a.length, 1);

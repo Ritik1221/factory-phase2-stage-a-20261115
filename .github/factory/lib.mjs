@@ -225,9 +225,9 @@ export function renderIssue(t, meta) {
   return { title: `[${t.id}] ${t.title}`, body: withMeta(body, meta) };
 }
 
-export function ciState(checkRuns) {
+export function ciState(checkRuns, name = 'ci') {
   // Only a run reported by GitHub Actions counts; no other identity can vouch for CI.
-  const runs = checkRuns.filter((c) => c.name === 'ci' && c.app?.slug === 'github-actions')
+  const runs = checkRuns.filter((c) => c.name === name && c.app?.slug === 'github-actions')
     .sort((a, b) => Date.parse(b.started_at) - Date.parse(a.started_at));
   if (!runs.length || runs[0].status !== 'completed') return 'pending';
   return runs[0].conclusion === 'success' ? 'green' : 'red';

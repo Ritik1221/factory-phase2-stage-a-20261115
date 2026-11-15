@@ -258,7 +258,7 @@ async function loadState() {
 
   const main = await gh('GET', `${r}/commits/main`);
   const runs = (await gh('GET', `${r}/commits/${main.sha}/check-runs?per_page=100`))?.check_runs ?? [];
-  const check = (name) => ciState(runs.filter((value) => value.name === name));
+  const check = (name) => ciState(runs, name);
   const projection = (issue) => issue.open ? stateOf(issue)
     : issue.labels.includes('superseded') ? 'superseded'
       : issue.mergedForAttempt ? 'done' : 'needs-human';
