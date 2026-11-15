@@ -1,0 +1,47 @@
+{
+  "goals_sha": "0dd1df866b64f652485ba839172d8851cb4f7ad0eec517ae52b6051b4615e3dc",
+  "goal_snapshot_sha": "0dd1df866b64f652485ba839172d8851cb4f7ad0eec517ae52b6051b4615e3dc",
+  "architecture": {
+    "components": ["synthetic HTTP service"],
+    "data_model": [],
+    "security_boundaries": ["No external network or credentials"]
+  },
+  "assumptions": ["This plan is a synthetic Stage A orchestration fixture"],
+  "constraints": ["Agent execution remains disabled"],
+  "decisions": [
+    {
+      "id": "ADR-001",
+      "decision": "Exercise one deterministic HTTP task",
+      "rationale": "One bounded task is sufficient to verify task persistence and recovery",
+      "alternatives": ["No task, which would not exercise issue creation recovery"],
+      "requires_human_approval": false
+    }
+  ],
+  "invariants": ["No provider invocation may be recorded"],
+  "requirements": [
+    {
+      "id": "REQ-001",
+      "description": "The synthetic service exposes a deterministic status response",
+      "acceptance_tests": ["The HTTP e2e test asserts the status response body and status code"],
+      "tasks": ["G1-T1"]
+    }
+  ],
+  "completion": {
+    "required_checks": ["ci", "e2e"],
+    "smoke_test": {
+      "name": "Synthetic HTTP behavior",
+      "command": "npm run e2e",
+      "assertions": ["HTTP endpoints return their documented status and response bodies"]
+    }
+  },
+  "tasks": [
+    {
+      "id": "G1-T1",
+      "goal": "G1",
+      "title": "Add the synthetic status response",
+      "acceptance": ["The status endpoint has a deterministic response and an HTTP e2e assertion"],
+      "depends_on": [],
+      "difficulty": "routine"
+    }
+  ]
+}
